@@ -121,9 +121,6 @@ def estimate_overall_accuracy(data_frame, x_axis, y_axis, column_name, values):
           f"average variance score: {average_variance_score}")
 
 def make_dashboard_plot(data_frame, plot_option):
-    # Starts timer to see how long creating the plot takes
-    start_time = time.perf_counter()
-
     plot_type = plot_option.plot_type
     x_axis = plot_option.x_axis
     y_axis = plot_option.y_axis
@@ -183,7 +180,6 @@ def make_dashboard_plot(data_frame, plot_option):
             pie_df.plot.pie(y=y_axis, ax=ax, title=y_axis, legend=True, autopct="%1.1f%%", labels=None, explode=[0.1 for i in range(len(pie_df.index))] )
 
     except TooManyGroupsException:
-        print("tmge")
         too_many_groups = True
     except Exception as error:
         print(error)
@@ -193,10 +189,6 @@ def make_dashboard_plot(data_frame, plot_option):
     buf = BytesIO()
     fig.savefig(buf, format="png")
     data = base64.b64encode(buf.getbuffer()).decode("ascii")
-    
-    # Prints time taken
-    end_time = time.perf_counter()
-    print(f"took {end_time - start_time:0.4f} seconds")
     
     if too_many_groups:
         return f"<h2>The chosen plot takes too long to generate</h2>"
@@ -209,16 +201,11 @@ def make_dashboard_plot(data_frame, plot_option):
    
 def make_PCA_plot(data_frame, columns):
     df = data_frame[columns].dropna()
-    print(df.head())
     scaler = StandardScaler()
     scaled_data = scaler.fit_transform(df)
-    print(f"scaled: {scaled_data[:5]}")
 
     pca= PCA()
     X_pca = pca.fit_transform(scaled_data)
-    print(f"pca variance ratio{(pca.explained_variance_ratio_ * 100)}" +
-          f"\n pca singular_values_{pca.singular_values_}" +
-          f"\n pca n_features_{pca.n_features_}")
 
     # Creates figure
     fig = Figure()
