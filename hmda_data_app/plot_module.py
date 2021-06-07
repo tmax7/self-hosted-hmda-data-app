@@ -53,7 +53,6 @@ def make_regression_plot(data_frame, x_axis, y_axis, user_point_x=None):
 
     # When there is less than 2 samples then can't do regression:
     except (ValueError) as valueError:
-        print(valueError)
         is_error = True
        
     # Creates figure
@@ -109,7 +108,6 @@ def estimate_overall_accuracy(data_frame, x_axis, y_axis, column_name, values):
 
         # When there is less than 2 samples then can't do regression:
         except ValueError as e:
-            print(e)
             pass
     if len(the_mean_squared_errors) != 0 and len(the_variance_scores) != 0:
         average_mean_squared_error = sum(the_mean_squared_errors) / len(the_mean_squared_errors)
@@ -182,7 +180,6 @@ def make_dashboard_plot(data_frame, plot_option):
     except TooManyGroupsException:
         too_many_groups = True
     except Exception as error:
-        print(error)
         is_error = True
       
     # Creates data for html image tag
