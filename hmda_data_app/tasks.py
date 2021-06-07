@@ -25,8 +25,9 @@ def make_celery(flask_app):
 
 celery_for_app = make_celery(flask_app)
 
-@celery_for_app.task()
-def make_dashboard_plot(data_frame_json, plot_option_json):
+@celery_for_app.task(bind=True)
+def make_dashboard_plot(self, data_frame_json, plot_option_json):
     data_frame =  pd.read_json(data_frame_json)
     plot_option = json.loads(plot_option_json, object_hook=as_PlotOption)
+    self.update_state(state="PROGRESS", meta= {"progress": 10})
     return plot_module.make_dashboard_plot(data_frame, plot_option)

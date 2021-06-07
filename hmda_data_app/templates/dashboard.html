@@ -9,6 +9,8 @@
     
 {% for default_plot_option in default_plot_options %}
     <form method="POST" class="container" id="dashboardForm{{ loop.index0 }}">
+        <input type="hidden" value = "{{ loop.index0 }}" name="formIndex">
+
         <div class="row">
             <label for="plotTypeSelect" class="col-sm-2 col-form-label">plot type</label>
             <select class="col-sm-10" name="plotType" id="plotTypeSelect">
@@ -56,7 +58,11 @@
     <p id="dashboardSubmitButtonText">Submit</p>
 </button>
 
-<div id="plotsDiv">  </div>
+<div id="plotsDiv">
+    {% for default_plot_option in default_plot_options %}
+    <div id="plot{{ loop.index0 }}"></div>
+    {% endfor %} 
+</div>
 
 <script>
     //IMPORTANT: used for requests !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -72,10 +78,12 @@
     dashBoardSubmitButton.addEventListener("click", (event) => {
         //event.preventDefault();
         
-        // removes previous plots
-        while (plotsDiv.firstChild) {
-            plotsDiv.removeChild(plotsDiv.firstChild);
-        }
+        // empties the plots in plotsDiv
+        plotsDiv.childNodes.forEach((node) => {
+            while (node.firstChild) {
+                node.removeChild(node.firstChild);
+            }
+        });
 
         // disables submitter button and shows dashboardSubmitSpinner
         dashBoardSubmitButton.disabled = true;
@@ -93,7 +101,7 @@
             dashboardSubmitButtonText.innerText = "Submit"
             dashboardSubmitSpinner.hidden = true;
             
-            // Resets the numberOfPlotsLoaded so that the user can submit the form again
+            // Resets the numberOfPlotsLoaded so that the user can submit the forms again
             numberOfPlotsLoaded = 0;
         }
     })
@@ -108,26 +116,34 @@
             })
             .then( response => {
                 let statusUrl = response.headers.get("Location");
-                fetchDashboardPlot(statusUrl);
+                let plotId = response.headers.get("plotId");
+                fetchDashboardPlot(statusUrl, plotId);
             })
         }
     }
 
-    function fetchDashboardPlot(statusUrl) {
+    function fetchDashboardPlot(statusUrl, plotId) {
+        let plot = document.querySelector("#" + plotId);
         fetch(statusUrl)
         .then(response => response.json())
         .then(response => {
-            if (response.state !== "PENDING" && response.state !== "PROGRESS") {
+           if (response.state == "SUCCESS") {
                 if (response.hasOwnProperty("result")) {
-                    plotsDiv.innerHTML += response.result;
+                    plot.innerHTML = response.result;
                 } else {
-                    plotsDiv.innerHTML += response.state;
+                    plot.innerHTML = response.state;
                 }
                 plotsDiv.dispatchEvent(new CustomEvent("plotLoaded"));
-
+            } else if (response.state === "FAILURE") {
+                plot.innerHTML = response.state;
+                plotsDiv.dispatchEvent(new CustomEvent("plotLoaded"));
             } else {
-                // rerun in 2 seconds
-                setTimeout(() => fetchDashboardPlot(statusUrl), 1.0*1000);
+                // Updates progress bar
+                if (response.hasOwnProperty("progress")) {
+
+                }
+                // Resubmits in 2 seconds
+                setTimeout(() => fetchDashboardPlot(statusUrl, plotId), 1.0*1000);
             }
         })
     }

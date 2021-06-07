@@ -123,32 +123,42 @@ def dashboard():
         return make_secure_response(redirect(url_for("login")))
 
 def make_dashboard_plot():
-    # Must do this to check if the first row is None before starting the while loop
+    form_index = request.form.get("formIndex")
+    plot_id = f"plot{form_index}"
+
     plot_type = request.form.get(f"plotType")
     x_axis = request.form.get(f"xAxis")
     y_axis = request.form.get(f"yAxis")
    
     plot_option = ad_hoc.PlotOption(ad_hoc.PlotType[plot_type.upper()], x_axis=x_axis, y_axis=y_axis)
     
-    # start task and return immediate response 
+    # Starts task and return immediate response 
     task = tasks.make_dashboard_plot.delay(original_data_frame_json, json.dumps(plot_option, cls=ad_hoc.PlotOptionEncoder))
-    return make_secure_response(({}, 202, {"Location": url_for("dashboard_plot_task_status", task_id=task.id)}))
+    return make_secure_response(({}, 202, {"Location": url_for("dashboard_plot_task_status", task_id=task.id), "plotId": plot_id}))
 
 
 @flask_app.route("/dashboard_plot_task_status/<task_id>")
 def dashboard_plot_task_status(task_id):
     task = tasks.make_dashboard_plot.AsyncResult(task_id)
-    if task.state == 'PENDING':
+    if task.state == "PENDING":
         # Job has not started
         response = {
             'state': task.state,
         }
-    elif task.state == 'SUCCESS':
+    elif task.state == "PROGRESS":
+        response = {
+            "state": task.state,
+            "progress": task.info.get("progress")
+        }
+    elif task.state == "SUCCESS":
         # Job is in progress
         response = {
-            'state': task.state,
-            'result': task.result
+            "state": task.state,
+            "result": task.result
         }
+        # IMPORTANT!!!!!: This frees up task resources now that result is ready:
+        task.forget()
+
     else:
         # Job has failed
         response = {
