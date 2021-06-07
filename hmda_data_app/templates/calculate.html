@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<h2>{{ title }}</h2>
+<h3>{{ message }}</h3>
+
+<p>
+    Enter the mortgage applicant's income and census tract code to get an recommended loan amount.
+    If you are unsure of the census tract code of the applicant, there are lists of tract codes and maps for each
+    AZ county at <a href="https://www2.census.gov/geo/maps/DC2020/PL20/st04_az/censustract_maps/">this census website</a>.
+</p>
+
+<form class="container" id="calculateForm" method="POST">
+    <div class="input-group mb-3">
+        <span class="input-group-text">income (in thousands)</span>
+        <input type="text" class="form-control" required name="userIncome" />
+    </div>
+    {% for option in options %}
+    {% if option.hidden %}
+    <div class="input-group mb-3" hidden>
+        <span class="input-group-text">{{ option.column_name }}</span>
+        <input type="text" class="form-control" name="tableColumns{{ loop.index0 }}" value="{{ option.column_name }}" />
+        <input type="text" class="form-control" name="relationalOperator{{ loop.index0 }}" value="{{ option.relational_operator }}" />
+        <input type="text" class="form-control" name="rightOperand{{ loop.index0 }}" value="{{ option.default_value }}" />
+        <input type="text" class="form-control" name="logicalOperator{{ loop.index0 }}" value="AND" />
+    </div>
+    {% else %}
+    <div class="input-group mb-3">
+        <span class="input-group-text">{{ option.column_name }}</span>
+        <input type="text" class="form-control" hidden name="tableColumns{{ loop.index0 }}" value="{{ option.column_name }}" />
+        <input type="text" class="form-control" hidden name="relationalOperator{{ loop.index0 }}" value="{{ option.relational_operator }}" />
+        <input type="text" class="form-control" required name="rightOperand{{ loop.index0 }}" />
+        <input type="text" class="form-control" hidden name="logicalOperator{{ loop.index0 }}" value="AND" />
+    </div>
+    {% endif %}
+    {% endfor %}
+    <button type="submit" class="btn btn-primary btn-lg" id="calculateButton">
+        <span class="spinner-border spinner-border-sm" role="status" hidden id="calculateSpinner"></span>
+        Submit
+    </button>
+</form>
+
+<div id="plot"></div>
+
+<script>
+    const calculateForm = document.querySelector("#calculateForm");
+    const calculateButton = document.querySelector("#calculateButton")
+    calculateForm.addEventListener("submit", submitForm);
+    async function submitForm(event) {
+        event.preventDefault();
+        const form = event.target;
+
+        //removes all child nodes in plot
+        const plot = document.querySelector("#plot")
+        while (plot.firstChild) {
+            plot.removeChild(plot.firstChild);
+        }
+
+        //disables calculateButton and shows calculateSpinner
+        calculateButton.disabled = true;
+        calculateSpinner.hidden = false;
+
+        //gets plot's innerHTML from server
+        const result = await fetch(form.action, {
+            method: form.method,
+            body: new URLSearchParams([...(new FormData(form))]),
+        })
+            .then((response) => response.text())
+            .then((text) => {
+                plot.innerHTML = text
+            }
+            )
+            .catch((error) => console.log(error));
+
+        //enables calculateButton and hides calculateSpinner
+        calculateButton.disabled = false;
+        calculateSpinner.hidden = true;
+    }
+</script>
+
+{% endblock %}

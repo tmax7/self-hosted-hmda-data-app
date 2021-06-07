@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="jumbotron">
+    <h1>HDMA Data App</h1>
+    <p class="lead">An app for analysis of HDMA data</p>
+    <p><a href="https://www.consumerfinance.gov/data-research/hmda/" target="_blank" class="btn btn-primary btn-large">Learn more &raquo;</a></p>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <h2>Dashboard</h2>
+        <p>
+        </p>
+        <p><a class="btn btn-default" href="{{ url_for("dashboard") }}">Learn more &raquo;</a></p>
+    </div>
+    <div class="col-md-4">
+        <h2>Calculate</h2>
+        <p></p>
+        <p><a class="btn btn-default" href="{{ url_for("calculate") }}">Learn more &raquo;</a></p>
+    </div>
+    <div class="col-md-4">
+        <h2>Query</h2>
+        <p></p>
+        <p><a class="btn btn-default" href="{{ url_for("query") }}">Learn more &raquo;</a></p>
+    </div>
+</div>
+
+{% endblock %}

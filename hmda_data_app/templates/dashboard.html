@@ -1,0 +1,131 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<h2>{{ title }}</h2>
+<h3>{{ message }}</h3>
+
+<p>If the plot is a pie plot, then only the y-axis is used to make the plot.</p>
+    
+{% for default_plot_option in default_plot_options %}
+    <form method="POST" class="container" id="dashboardForm{{ loop.index0 }}">
+        <div class="row">
+            <label for="plotTypeSelect" class="col-sm-2 col-form-label">plot type</label>
+            <select class="col-sm-10" name="plotType" id="plotTypeSelect">
+                {% for plot_type in plot_types %}
+                    {% if plot_type == default_plot_option.plot_type.value %}
+                        <option value="{{ plot_type }}" selected>{{ plot_type }}</option>
+                    {% else %}
+                        <option value="{{ plot_type }}">{{ plot_type }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="row">
+            <label for="xAxisSelect" class="col-sm-2 col-form-label">x-axis</label>
+            <select class="col-sm-10" name="xAxis" id="xAxisSelect">
+                {% for column_name in table_info.column_names %}
+                    {% if column_name == default_plot_option.x_axis %}
+                        <option value="{{ column_name }}" selected>{{ column_name }}</option>
+                    {% else %}
+                        <option value="{{ column_name }}">{{ column_name }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="row">
+            <label for="yAxisSelect" class="col-sm-2 col-form-label">y-axis</label>
+            <select class="col-sm-10" name="yAxis" id="yAxisSelect">
+                {% for column_name in table_info.column_names %}
+                    {% if column_name == default_plot_option.y_axis%}
+                        <option value="{{ column_name }}" selected>{{ column_name }}</option>
+                    {% else %}
+                        <option value="{{ column_name }}">{{ column_name }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+    </form>   
+    <hr />
+{% endfor %}
+
+<button type="button" class="btn btn-primary btn-lg col-sm-3 g-0" id="dashboardSubmitButton">
+    <span class="spinner-border spinner-border-sm" role="status" hidden id="dashboardSubmitSpinner"></span>
+    <p id="dashboardSubmitButtonText">Submit</p>
+</button>
+
+<div id="plotsDiv">  </div>
+
+<script>
+    //IMPORTANT: used for requests !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    const numberOfRequestsToSubmit = {{ default_plot_options| length }}
+    //submits eventListener
+    const dashBoardSubmitButton = document.querySelector("#dashboardSubmitButton")
+    const dashboardSubmitButtonText = document.querySelector("#dashboardSubmitButtonText")
+    const dashboardSubmitSpinner = document.querySelector("#dashboardSubmitSpinner");
+
+    dashBoardSubmitButton.addEventListener("click", async (event) => {
+        //event.preventDefault();
+        
+        // removes previous plots
+        const plotsDiv = document.querySelector("#plotsDiv");
+        while (plotsDiv.firstChild) {
+            plotsDiv.removeChild(plotsDiv.firstChild);
+        }
+
+        // disables submitter button and shows dashboardSubmitSpinner
+        dashBoardSubmitButton.disabled = true;
+        dashboardSubmitButtonText.innerText = "Loading Plot(s)";
+        dashboardSubmitSpinner.hidden = false;
+
+        // gets plotsDiv's innerHTML from server
+        fetchPlots();
+    })
+
+    //recursively submits a fetch request for each dashboardForm
+    function fetchPlots() {
+        
+        for (let i = 0; i < numberOfRequestsToSubmit; i++) {
+            let formToSubmit = document.querySelector(("#dashboardForm" + i))
+            fetch(formToSubmit.action, {
+                method:formToSubmit.method,
+                body: new URLSearchParams([...(new FormData(formToSubmit))]),
+            })
+            .then( response => {
+                let statusUrl = response.headers.get("Location");
+                fetchDashboardPlot(statusUrl);
+            })
+        }
+
+        // dashBoardSubmitButton.disabled = false;
+        // dashboardSubmitButtonText.innerText = "Submit"
+        // dashboardSubmitSpinner.hidden = true;
+    }
+
+    function fetchDashboardPlot(statusUrl) {
+        fetch(statusUrl)
+        .then(response => response.json())
+        .then(response => {
+            if (response.state !== "PENDING" && response.state !== "PROGRESS") {
+                if (response.hasOwnProperty("result")) {
+                    plotsDiv.innerHTML += response.result;
+                    console.log("worked");
+                } else {
+                    plotsDiv.innerHTML += response.state;
+                    console.log(response)
+                }
+            } else {
+                // rerun in 2 seconds
+                setTimeout(() => fetchDashboardPlot(statusUrl), 1.0*1000);
+            }
+        })
+    }
+   
+
+    //clicks dashboardSubmitButton when this html is first rendered to load default plots
+    document.querySelector("#dashboardSubmitButton").click()
+</script>
+
+{% endblock %}
