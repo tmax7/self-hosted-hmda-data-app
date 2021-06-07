@@ -60,17 +60,19 @@
 
 <script>
     //IMPORTANT: used for requests !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    const numberOfRequestsToSubmit = {{ default_plot_options| length }}
-    //submits eventListener
-    const dashBoardSubmitButton = document.querySelector("#dashboardSubmitButton")
-    const dashboardSubmitButtonText = document.querySelector("#dashboardSubmitButtonText")
+    const numberOfRequestsToSubmit = {{ default_plot_options| length }};
+    let numberOfPlotsLoaded = 0
+    
+    const dashBoardSubmitButton = document.querySelector("#dashboardSubmitButton");
+    const dashboardSubmitButtonText = document.querySelector("#dashboardSubmitButtonText");
     const dashboardSubmitSpinner = document.querySelector("#dashboardSubmitSpinner");
+    
+    const plotsDiv = document.querySelector("#plotsDiv");
 
-    dashBoardSubmitButton.addEventListener("click", async (event) => {
+    dashBoardSubmitButton.addEventListener("click", (event) => {
         //event.preventDefault();
         
         // removes previous plots
-        const plotsDiv = document.querySelector("#plotsDiv");
         while (plotsDiv.firstChild) {
             plotsDiv.removeChild(plotsDiv.firstChild);
         }
@@ -81,12 +83,23 @@
         dashboardSubmitSpinner.hidden = false;
 
         // gets plotsDiv's innerHTML from server
-        fetchPlots();
+        fetchPlots()
+    })
+
+    plotsDiv.addEventListener("plotLoaded", (event) => {
+        numberOfPlotsLoaded++
+        if (numberOfPlotsLoaded === numberOfRequestsToSubmit) {
+            dashBoardSubmitButton.disabled = false;
+            dashboardSubmitButtonText.innerText = "Submit"
+            dashboardSubmitSpinner.hidden = true;
+            
+            // Resets the numberOfPlotsLoaded so that the user can submit the form again
+            numberOfPlotsLoaded = 0;
+        }
     })
 
     //recursively submits a fetch request for each dashboardForm
     function fetchPlots() {
-        
         for (let i = 0; i < numberOfRequestsToSubmit; i++) {
             let formToSubmit = document.querySelector(("#dashboardForm" + i))
             fetch(formToSubmit.action, {
@@ -98,10 +111,6 @@
                 fetchDashboardPlot(statusUrl);
             })
         }
-
-        // dashBoardSubmitButton.disabled = false;
-        // dashboardSubmitButtonText.innerText = "Submit"
-        // dashboardSubmitSpinner.hidden = true;
     }
 
     function fetchDashboardPlot(statusUrl) {
@@ -111,11 +120,11 @@
             if (response.state !== "PENDING" && response.state !== "PROGRESS") {
                 if (response.hasOwnProperty("result")) {
                     plotsDiv.innerHTML += response.result;
-                    console.log("worked");
                 } else {
                     plotsDiv.innerHTML += response.state;
-                    console.log(response)
                 }
+                plotsDiv.dispatchEvent(new CustomEvent("plotLoaded"));
+
             } else {
                 // rerun in 2 seconds
                 setTimeout(() => fetchDashboardPlot(statusUrl), 1.0*1000);
