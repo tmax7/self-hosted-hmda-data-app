@@ -350,19 +350,19 @@
 		nodesToRemove = []
 		sqlQueryDiv.childNodes.forEach((node) => {
 			if ((node.id !== "sqlQueryDivRow0") && (node.id !== "sqlQueryDivRow1") && (node.id !== "sqlQueryDivRow2")) {
-				nodesToRemove.push(node)
+				nodesToRemove.push(node);
 			}
 		})
-		nodesToRemove.forEach(node => node.remove())
+		nodesToRemove.forEach(node => node.remove());
 
 		//removes all child nodes in limitDivRow
 		while (limitDivRow.firstChild) {
-			limitDivRow.removeChild(limitDivRow.firstChild)
+			limitDivRow.removeChild(limitDivRow.firstChild);
 		}
 
 		//removes all child nodes in queryResult
 		while (queryResult.firstChild){
-			queryResult.removeChild(queryResult.firstChild)
+			queryResult.removeChild(queryResult.firstChild);
 		}
 
 		//RESETS rowIndex BACK TO 2
@@ -372,7 +372,7 @@
 	async function submitForm(event) {
 		event.preventDefault();
 		const form = event.target;
-		const submitterButton = event.submitter
+		const submitterButton = event.submitter;
 
 		if (submitterButton.id === "submitQueryButton") {
 			//removes all child nodes in queryResult
@@ -384,8 +384,8 @@
 			//disables submitQueryButton and shows submitQuerySpinner
 			const submitQueryButton = document.querySelector("#submitQueryButton");
 			submitQueryButton.disabled = true;
-			const submitQuerySpinner = document.querySelector("#submitQuerySpinner")
-			submitQuerySpinner.hidden = false
+			const submitQuerySpinner = document.querySelector("#submitQuerySpinner");
+			submitQuerySpinner.hidden = false;
 
 			//gets queryResult's innerHTML from server
 			const result = await fetch(submitterButton.formAction, {
@@ -417,8 +417,8 @@
 			//disables plotButton and shows spinner
 			const plotButton = document.querySelector("#plotButton");
 			plotButton.disabled = true;
-			const plotSpinner = document.querySelector("#plotSpinner")
-			plotSpinner.hidden = false
+			const plotSpinner = document.querySelector("#plotSpinner");
+			plotSpinner.hidden = false;
 
 			//gets plot's innerHTML from server
 			const result = await fetch(submitterButton.formAction, {
@@ -427,9 +427,8 @@
 				})
 				.then((response) => response.text())
 				.then((text) => {
-						plot.innerHTML = text
-					}
-				)
+					plot.innerHTML = text;
+				})
 				.catch((error) => console.log(error));
 
 			//enables plotButton and hides plotSpinner
@@ -440,14 +439,14 @@
 	}
 
 	function addOptionsToAxes() {
-		const xAxisSelect = document.querySelector("#xAxisSelect")
-		const yAxisSelect = document.querySelector("#yAxisSelect")
+		const xAxisSelect = document.querySelector("#xAxisSelect");
+		const yAxisSelect = document.querySelector("#yAxisSelect");
 		// removes previous options
 		while (xAxisSelect.firstChild) {
-			xAxisSelect.removeChild(xAxisSelect.firstChild)
+			xAxisSelect.removeChild(xAxisSelect.firstChild);
 		}
 		while (yAxisSelect.firstChild) {
-			yAxisSelect.removeChild(yAxisSelect.firstChild)
+			yAxisSelect.removeChild(yAxisSelect.firstChild);
 		}
 
 		// adds column options
@@ -455,12 +454,12 @@
 		for (const tableColumn of selectedTableColumns) {
 			xOption = document.createElement("option");
 			xOption.value = tableColumn;
-			xOption.appendChild(document.createTextNode(tableColumn))
+			xOption.appendChild(document.createTextNode(tableColumn));
 			xAxisSelect.appendChild(xOption);
 
 			yOption = document.createElement("option");
 			yOption.value = tableColumn;
-			yOption.appendChild(document.createTextNode(tableColumn))
+			yOption.appendChild(document.createTextNode(tableColumn));
 			yAxisSelect.appendChild(yOption);
 		}
 	}

@@ -140,27 +140,15 @@ def make_dashboard_plot():
 @flask_app.route("/dashboard_plot_task_status/<task_id>")
 def dashboard_plot_task_status(task_id):
     task = tasks.make_dashboard_plot.AsyncResult(task_id)
-    if task.state == "PENDING":
-        # Job has not started
-        response = {
-            'state': task.state,
-        }
-    elif task.state == "PROGRESS":
-        response = {
-            "state": task.state,
-            "progress": task.info.get("progress")
-        }
-    elif task.state == "SUCCESS":
-        # Job is in progress
+   
+    if task.state == "SUCCESS":
         response = {
             "state": task.state,
             "result": task.result
         }
         # IMPORTANT!!!!!: This frees up task resources now that result is ready:
         task.forget()
-
     else:
-        # Job has failed
         response = {
             'state': task.state,
         }

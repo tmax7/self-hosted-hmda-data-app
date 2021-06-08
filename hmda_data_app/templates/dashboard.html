@@ -60,8 +60,12 @@
 
 <div id="plotsDiv">
     {% for default_plot_option in default_plot_options %}
-    <div id="plot{{ loop.index0 }}"></div>
-    {% endfor %} 
+    <div id="plot{{ loop.index0 }}">
+        <div class="progress" id="progressDiv{{ loop.index0 }}" hidden>
+            <div class="progress-bar" role="progressbar" style="width: 1%" aria-valuenow="1" aria-valuemin="1" area-valuemax="100" id="progressBar{{ loop.index0 }}" hidden></div>
+        </div>
+    </div>
+    {% endfor %}
 </div>
 
 <script>
@@ -77,25 +81,47 @@
 
     dashBoardSubmitButton.addEventListener("click", (event) => {
         //event.preventDefault();
-        
-        // empties the plots in plotsDiv
-        plotsDiv.childNodes.forEach((node) => {
-            while (node.firstChild) {
-                node.removeChild(node.firstChild);
-            }
+
+        // Removes everything except the progress bar from each of the plots in plotDiv.
+        // Also shows the progress bars.
+        plotsDiv.childNodes.forEach((plot) => {
+            let nodesToRemove = [];
+            plot.childNodes.forEach((childOfPlot) => {
+                if (childOfPlot.className !== "progress") {
+                    nodesToRemove.push(childOfPlot);
+                } else {
+                    // Shows the progress bars and sets them to 1%
+                    childOfPlot.hidden = false;
+                    childOfPlot.childNodes.forEach((grandChildOfPlot) => {
+                        if (grandChildOfPlot.className === "progress-bar") {
+                            grandChildOfPlot.hidden = false;
+                            grandChildOfPlot.style.width = "1%"
+                            grandChildOfPlot.setAttribute("aria-valuenow", 1);
+                        }
+                    })
+                }
+            });
+            nodesToRemove.forEach(node => node.remove());
         });
 
-        // disables submitter button and shows dashboardSubmitSpinner
+        
+        // Disables submitter button and shows dashboardSubmitSpinner
         dashBoardSubmitButton.disabled = true;
         dashboardSubmitButtonText.innerText = "Loading Plot(s)";
         dashboardSubmitSpinner.hidden = false;
 
-        // gets plotsDiv's innerHTML from server
+        // Gets plotsDiv's innerHTML from server
         fetchPlots()
-    })
+    });
 
-    plotsDiv.addEventListener("plotLoaded", (event) => {
+    plotsDiv.addEventListener("plotLoaded", (plotLoadedEvent) => {
+        // Hides the progress bar
+        let progressIndex = plotLoadedEvent.detail.progressIndex;
+        document.querySelector("#progressDiv" + progressIndex).hidden = true;
+        document.querySelector("#progressBar" + progressIndex).hidden = true;
+
         numberOfPlotsLoaded++
+        // If all requests have been submitted, makes the submit button available again
         if (numberOfPlotsLoaded === numberOfRequestsToSubmit) {
             dashBoardSubmitButton.disabled = false;
             dashboardSubmitButtonText.innerText = "Submit"
@@ -104,9 +130,10 @@
             // Resets the numberOfPlotsLoaded so that the user can submit the forms again
             numberOfPlotsLoaded = 0;
         }
+
     })
 
-    //recursively submits a fetch request for each dashboardForm
+    // Recursively submits a fetch request for each dashboardForm
     function fetchPlots() {
         for (let i = 0; i < numberOfRequestsToSubmit; i++) {
             let formToSubmit = document.querySelector(("#dashboardForm" + i))
@@ -124,23 +151,41 @@
 
     function fetchDashboardPlot(statusUrl, plotId) {
         let plot = document.querySelector("#" + plotId);
+        // plotId is of the form "plotN" where N is an number
+        let progressIndex = plotId[plotId.length - 1];
+        let progressDiv = document.querySelector("#progressDiv" + progressIndex);
+        let progressBar = document.querySelector("#progressBar" + progressIndex);
+
         fetch(statusUrl)
         .then(response => response.json())
         .then(response => {
            if (response.state == "SUCCESS") {
                 if (response.hasOwnProperty("result")) {
-                    plot.innerHTML = response.result;
+                    plot.innerHTML += response.result;
                 } else {
-                    plot.innerHTML = response.state;
+                    plot.innerHTML += response.state;
                 }
-                plotsDiv.dispatchEvent(new CustomEvent("plotLoaded"));
+                // Sends plotLoaded event
+                plotsDiv.dispatchEvent(new CustomEvent("plotLoaded", {
+                    detail: {
+                        progressIndex: progressIndex,
+                    }
+                }));
             } else if (response.state === "FAILURE") {
-                plot.innerHTML = response.state;
-                plotsDiv.dispatchEvent(new CustomEvent("plotLoaded"));
+                plot.innerHTML += response.state;
+                // Sends plotLoaded event
+                plotsDiv.dispatchEvent(new CustomEvent("plotLoaded", {
+                    detail: {
+                        progressIndex: progressIndex,
+                    }
+                }));
             } else {
                 // Updates progress bar
-                if (response.hasOwnProperty("progress")) {
-
+                let currentValue = parseInt(progressBar.getAttribute("aria-valuenow"));
+                if (currentValue < 90) {
+                    let newValue = currentValue + 4;
+                    progressBar.style.width = newValue + "%";
+                    progressBar.setAttribute("aria-valuenow", newValue);
                 }
                 // Resubmits in 2 seconds
                 setTimeout(() => fetchDashboardPlot(statusUrl, plotId), 1.0*1000);
@@ -149,7 +194,7 @@
     }
    
 
-    //clicks dashboardSubmitButton when this html is first rendered to load default plots
+    // Clicks dashboardSubmitButton when this html is first rendered to load default plots
     document.querySelector("#dashboardSubmitButton").click()
 </script>
 
