@@ -9,11 +9,11 @@ from hmda_data_app import plot_module
 def make_celery(flask_app):
     celery = Celery(
         flask_app.import_name,
-        backend=flask_app.config['CELERY_RESULT_BACKEND'],
-        broker=flask_app.config['CELERY_BROKER_URL']
+        backend=flask_app.config['result_backend'],
+        broker=flask_app.config['broker_url']
     )
     celery.conf.update(flask_app.config)
-    celery.conf.update(CELERY_SERIALIZER="pickle")
+    # celery.conf.update(task_serializer="pickle")
 
     class ContextTask(celery.Task):
         def __call__(self, *args, **kwargs):
