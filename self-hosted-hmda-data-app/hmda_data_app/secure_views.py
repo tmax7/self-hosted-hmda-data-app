@@ -9,7 +9,8 @@ import json
 from flask import make_response, redirect, render_template, render_template_string, request, session, url_for, jsonify
 import pandas as pd
 import os
-import pyargon2
+
+import argon2
 from hmac import compare_digest as compare_hash
 import pickle
 
@@ -33,6 +34,8 @@ original_data_frame_json = original_data_frame.to_json()
 abs_path_to_password_dict_pickle = os.path.join(PROJECT_ROOT, "static/data/password_dict.pkl").replace("\\", "/")
 with open(abs_path_to_password_dict_pickle, "rb") as password_dict_pickle:
     password_dict = pickle.load(password_dict_pickle)
+# Creates PasswordHasher
+password_hasher = argon2.PasswordHasher()
 
 # Sets up the secret_key for the session
 flask_app.secret_key = os.urandom(16)
@@ -55,9 +58,9 @@ def login():
 def login_user():
     username = request.form.get("username")
 
-    user_password_info = password_dict.get(username)
+    hash = password_dict.get(username)
     
-    if user_password_info is None:
+    if hash is None:
         return make_secure_response(render_template(
             "login.html",
             title="Login",
@@ -65,12 +68,18 @@ def login_user():
             message="wrong username"
         ))
     
-    salt = user_password_info["salt"]
-    hash = user_password_info["hash"]
-
     password = request.form.get("password")
+    is_correct_password = False
+    try:
+        password_hasher.verify(hash, password)
+        is_correct_password = True
+        if password_hasher.check_needs_rehash(hash):
+            new_hash = password_hasher.hash(password)
+            password_dict.update({username: new_hash})
+    except argon2.exceptions.VerifyMismatchError:
+        pass
     
-    if compare_hash(pyargon2.hash(password, salt), hash):
+    if is_correct_password:
         session["username"] = username
         return make_secure_response(redirect(url_for("home")))
     else:

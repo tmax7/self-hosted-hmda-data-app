@@ -1,7 +1,6 @@
 """
 The flask application package.
 """
-
 from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
 
