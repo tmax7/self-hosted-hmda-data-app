@@ -13,6 +13,7 @@ import os
 import argon2
 from hmac import compare_digest as compare_hash
 import pickle
+import psycopg2
 
 from hmda_data_app import plot_module
 from hmda_data_app import ad_hoc
@@ -30,10 +31,8 @@ table_info = ad_hoc.TableInfo(file_name, original_data_frame.columns.format())
 # Get json version of data frame for passing to Celery tasks
 original_data_frame_json = original_data_frame.to_json()
 
-# Reads the pickle containing the passwords for the application
-abs_path_to_password_dict_pickle = os.path.join(PROJECT_ROOT, "static/data/password_dict.pkl").replace("\\", "/")
-with open(abs_path_to_password_dict_pickle, "rb") as password_dict_pickle:
-    password_dict = pickle.load(password_dict_pickle)
+
+
 # Creates PasswordHasher
 password_hasher = argon2.PasswordHasher()
 
@@ -58,9 +57,28 @@ def login():
 def login_user():
     username = request.form.get("username")
 
-    hash = password_dict.get(username)
+    # Connects to password database.
+    # IMPORTANT: must commit passwords_db_connection
+    # IMPORTANT: alway close passwords_db_cursor and then passwords_db_connection
+    # before the function returns.
+    hashes_db_connection = psycopg2.connect("dbname=hmda_data_app_db user=postgres password=defaultPassword host=hmda-data-app-postgres-container")
+    hashes_db_cursor = hashes_db_connection.cursor()
+
+    # IMPORTANT:
+    #  Must use this paraameter passing syntax or the other syntax shown on pyscopg's documentation
+    # to avoid SQL injection attack!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    hashes_db_cursor.execute("""
+        SELECT hash 
+        FROM user_password_hashes
+        WHERE username = %(username)s;
+    """, {"username": username})
+    
+    # .fetchone() returns a tuple of the form (hash,)
+    hash = hashes_db_cursor.fetchone()[0];
     
     if hash is None:
+        hashes_db_cursor.close()
+        hashes_db_connection.close()
         return make_secure_response(render_template(
             "login.html",
             title="Login",
@@ -75,14 +93,22 @@ def login_user():
         is_correct_password = True
         if password_hasher.check_needs_rehash(hash):
             new_hash = password_hasher.hash(password)
-            password_dict.update({username: new_hash})
+            hashes_db_cursor.execute("""
+                UPDATE user_password_hashes SET hash = %(hash)s
+                WHERE username = %(username)s;
+            """, {"hash": hash, "username": username})
     except argon2.exceptions.VerifyMismatchError:
         pass
     
     if is_correct_password:
         session["username"] = username
+        hashes_db_connection.commit()
+        hashes_db_cursor.close()
+        hashes_db_connection.close()
         return make_secure_response(redirect(url_for("home")))
     else:
+        hashes_db_cursor.close()
+        hashes_db_connection.close()
         return make_secure_response(render_template(
             "login.html",
             title="Login",

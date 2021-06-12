@@ -9,8 +9,8 @@ flask_app.config.update(
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    broker_url='redis://localhost:6379',
-    result_backend='redis://localhost:6379'
+    broker_url='redis://hmda-data-app-redis-container:6379',
+    result_backend='redis://hmda-data-app-redis-container:6379'
 )
 flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app, x_proto=1, x_host=1)
 
