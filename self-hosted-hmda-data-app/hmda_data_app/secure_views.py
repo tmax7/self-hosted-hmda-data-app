@@ -37,7 +37,7 @@ original_data_frame_json = original_data_frame.to_json()
 password_hasher = argon2.PasswordHasher()
 
 # Sets up the secret_key for the session
-flask_app.secret_key = os.urandom(16)
+flask_app.secret_key = b'\xa79\xd3G^p\x95K\t\xb1v*i\xe0\xdf\xe7'
 
 # Initializes plot_types
 plot_types = [plot_type.value for plot_type in ad_hoc.PlotType]
@@ -319,9 +319,9 @@ def logout():
 
 def make_secure_response(template):
     response = make_response(template)
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "SAMEORIGIN"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
+    # response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    # response.headers["X-Content-Type-Options"] = "nosniff"
+    # response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    # response.headers["X-XSS-Protection"] = "1; mode=block"
     return response
 
