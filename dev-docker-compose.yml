@@ -1,16 +1,17 @@
 services:
   hmda-data-app:
     container_name: hmda-data-app
-    image: dev-hmda-data-app
+    image: hmda-data-app-python
     depends_on:
       - redis
       - postgres
     volumes:
+      - "/var/log/self-hosted-hmda-data-app/logs"
       - type: bind
         source: ./self-hosted-hmda-data-app
         target: /self-hosted-hmda-data-app
         read_only: true
-    entrypoint: /self-hosted-hmda-data-app/dev_start_script.sh
+    entrypoint: /self-hosted-hmda-data-app/start_script.sh
   redis:
     container_name: redis-for-hmda-data-app
     image: redis

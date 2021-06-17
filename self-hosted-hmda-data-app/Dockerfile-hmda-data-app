@@ -1,12 +1,5 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.8-slim-buster
-
-RUN apt install python3-dev libpq-dev
-
-WORKDIR /self-hosted-hmda-data-app
-COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
+FROM hmda-data-app-python
 COPY . .
-
 CMD [bash start_script.sh]
