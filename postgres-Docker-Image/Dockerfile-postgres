@@ -1,3 +1,4 @@
 FROM postgres:12
-COPY ./secrets/postgres-password.txt /run/secrets/postgres-password.txt
-ENV POSTGRES_PASSWORD_FILE=/run/secrets/postgres-password.txt
+COPY ./secrets/postgres_password.txt /run/secrets/postgres_password.txt
+ENV POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password.txt
+COPY ./sql/* /docker-entrypoint-initdb.d

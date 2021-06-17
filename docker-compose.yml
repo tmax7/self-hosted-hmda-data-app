@@ -1,0 +1,34 @@
+services:
+  hmda-data-app:
+    container_name: hmda-data-app
+    build:
+      context: ./self-hosted-hmda-data-app
+      dockerfile: Dockerfile-hmda-data-app
+    volumes:
+      - logvolume:/logs
+    depends_on:
+      - redis
+      - postgre
+    entrypoint: /self-hosted-hmda-data-app/start_script.sh
+  redis:
+    container_name: redis-hmda-data-app
+    image: redis
+  postgres:
+    container_name: postgres-for-hmda-data-app
+    build:
+      context: ./postgres-Docker-Image
+      dockerfile: Dockerfile-postgres
+    secrets:
+      - postgres_password
+  nginx:
+    container_name: nginx-for-hmda-data-app
+    build:
+      context: ./nginx-Docker-Image
+      dockerfild: Dockerfile-nginx
+    depends_on:
+      - hmda-data-app
+    ports:
+      - "8080:80"
+secrets:
+  postgres_password:
+    file: ./postgres-DockerImage/secrets/postgres_password.txt

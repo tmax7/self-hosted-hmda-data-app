@@ -1,7 +1,6 @@
-/c hmda_data_app_db;
 CREATE TABLE user_password_hashes (
-	username VARCHAR(200) NOT NULL PRIMARY KEY,
-	hash VARCHAR(200) NOT NULL
+    username VARCHAR(200) NOT NULL PRIMARY KEY,
+    hash VARCHAR(200) NOT NULL
 );
 
 INSERT INTO user_password_hashes (username, hash) 

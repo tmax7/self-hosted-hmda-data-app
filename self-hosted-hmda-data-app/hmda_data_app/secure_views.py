@@ -61,24 +61,24 @@ def login_user():
     # IMPORTANT: must commit passwords_db_connection
     # IMPORTANT: alway close passwords_db_cursor and then passwords_db_connection
     # before the function returns.
-    hashes_db_connection = psycopg2.connect("dbname=hmda_data_app_db user=postgres password=defaultPassword host=hmda-data-app-postgres-container")
-    hashes_db_cursor = hashes_db_connection.cursor()
+    db_connection = psycopg2.connect(dbname="postgres", user="postgres", password="defaultPassword", host="postgres-for-hmda-data-app")
+    db_cursor = db_connection.cursor()
 
     # IMPORTANT:
     #  Must use this paraameter passing syntax or the other syntax shown on pyscopg's documentation
     # to avoid SQL injection attack!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    hashes_db_cursor.execute("""
+    db_cursor.execute("""
         SELECT hash 
         FROM user_password_hashes
         WHERE username = %(username)s;
     """, {"username": username})
     
     # .fetchone() returns a tuple of the form (hash,)
-    hash = hashes_db_cursor.fetchone()[0];
+    hash = db_cursor.fetchone()[0];
     
     if hash is None:
-        hashes_db_cursor.close()
-        hashes_db_connection.close()
+        db_cursor.close()
+        db_connection.close()
         return make_secure_response(render_template(
             "login.html",
             title="Login",
@@ -93,7 +93,7 @@ def login_user():
         is_correct_password = True
         if password_hasher.check_needs_rehash(hash):
             new_hash = password_hasher.hash(password)
-            hashes_db_cursor.execute("""
+            db_cursor.execute("""
                 UPDATE user_password_hashes SET hash = %(hash)s
                 WHERE username = %(username)s;
             """, {"hash": hash, "username": username})
@@ -102,13 +102,13 @@ def login_user():
     
     if is_correct_password:
         session["username"] = username
-        hashes_db_connection.commit()
-        hashes_db_cursor.close()
-        hashes_db_connection.close()
+        db_connection.commit()
+        db_cursor.close()
+        db_connection.close()
         return make_secure_response(redirect(url_for("home")))
     else:
-        hashes_db_cursor.close()
-        hashes_db_connection.close()
+        db_cursor.close()
+        db_connection.close()
         return make_secure_response(render_template(
             "login.html",
             title="Login",
