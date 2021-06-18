@@ -1,17 +1,18 @@
+version: "3.8"
 services:
   hmda-data-app:
     container_name: hmda-data-app
     build:
       context: ./self-hosted-hmda-data-app
       dockerfile: Dockerfile-hmda-data-app
-    volumes:
-      - logvolume:/logs
     depends_on:
       - redis
-      - postgre
+      - postgres
+    volumes:
+      - /var/log/self-hosted-hmda-data-app/logs
     entrypoint: /self-hosted-hmda-data-app/start_script.sh
   redis:
-    container_name: redis-hmda-data-app
+    container_name: redis-for-hmda-data-app
     image: redis
   postgres:
     container_name: postgres-for-hmda-data-app
@@ -24,7 +25,7 @@ services:
     container_name: nginx-for-hmda-data-app
     build:
       context: ./nginx-Docker-Image
-      dockerfild: Dockerfile-nginx
+      dockerfile: Dockerfile-nginx
     depends_on:
       - hmda-data-app
     ports:
