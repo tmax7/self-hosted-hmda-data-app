@@ -13,7 +13,7 @@ services:
     entrypoint: /self-hosted-hmda-data-app/start_script.sh
   redis:
     container_name: redis-for-hmda-data-app
-    image: redis
+    image: redis:6-alpine
   postgres:
     container_name: postgres-for-hmda-data-app
     build:
